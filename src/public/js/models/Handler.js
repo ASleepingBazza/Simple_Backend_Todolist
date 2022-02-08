@@ -34,13 +34,7 @@ class Handler {
     }
 
     edit(id, property, newValue) {
-        let foundIndex = -1;
-        for (let i = 0; i < this.data.length; i++) {
-            const entry = this.data[i];
-            if (entry.id == id) {
-                foundIndex = i;
-            }
-        }
+        let foundIndex = this.data.findIndex((p) => p.id === id);
         if (foundIndex != -1) {
             if (this.data[foundIndex].changeProperty(property, newValue)) {
                 this.storeData();

@@ -2,28 +2,25 @@ const express = require("express");
 const expressHandlebars = require("express-handlebars");
 const path = require("path");
 const { request, response } = require("express");
+const CustomMorganToken = require("./public/js/models/Custom_Morgan_Token");
 // Morgan is a tool to create more useful logging and debugging.
 const morgan = require("morgan");
-
-const Todo = require("./public/js/models/Todo");
-const TodoHandler = new Todo.TodoHandler();
 
 const app = express();
 const port = 3000;
 const hostname = "127.0.0.1";
 
-// #################### REQUIRED CONFIG ####################
+const Todo = require("./public/js/models/Todo");
+const TodoHandler = new Todo.TodoHandler();
+const Token = new CustomMorganToken(morgan, app);
+
+// ################## REQUIRED CONFIG ##################
 // Configure template Engine and Main Template File
 app.engine(
     "hbs", // Vi skapar en motor i vår app som vi döper till "hbs".
     expressHandlebars.engine({
         defaultLayout: "main", // Default layout file
         extname: ".hbs", // Filename extension
-        helpers: {
-            isActive(input, value) {
-                return input == value;
-            },
-        },
     })
 );
 // Setting template engine
@@ -34,18 +31,10 @@ app.use(express.urlencoded({ extended: true })); // Needed for forms to work.
 app.use(express.static("./src/public")); // Public folder. Css and  JS access.
 app.use(express.json()); // Tells the server to expect request info to be in JSON format.
 // Custom token for printing in the console whevener we recieve a request.
-morgan.token("custom-print", (req, res) => {
-    console.log("\n============== REQUEST ==============");
-    console.log("URL:\t", req.url);
-    console.log("METHOD:\t", req.method);
-    console.log("STATUS:\t", res.statusCode);
-    console.log("BODY:\t", req.body);
-    console.log("CONTENT-TYPE:\t", req.headers["content-type"]);
-});
-app.use(morgan(`:custom-print`)); // We use our own custom token.
-// #########################################################
+Token.enable();
+// ######################################################
 
-//####################### ROUTES #######################
+// ####################### ROUTES #######################
 // Home
 app.get("/", (request, response) => {
     let isCurrentEmpty = true;
@@ -153,6 +142,7 @@ app.post("/:id/done", (request, response) => {
         TodoHandler.verify();
         response.status(300).redirect("/");
     } else {
+        console.log(TodoHandler.error);
         response.statusCode(400).redirect("/");
     }
 });
@@ -163,6 +153,7 @@ app.post("/:id/undo", (request, response) => {
         TodoHandler.verify();
         response.status(300).redirect("/");
     } else {
+        console.log(TodoHandler.error);
         response.status(400).redirect("/");
     }
 });
@@ -178,7 +169,7 @@ app.post("/:id/delete", (request, response) => {
     }
 });
 
-//####################### LISTEN #######################
+// ####################### LISTEN #######################
 app.listen(port, hostname, () => {
     console.log(`Example app is running at: http://${hostname}:${port}`);
 });
